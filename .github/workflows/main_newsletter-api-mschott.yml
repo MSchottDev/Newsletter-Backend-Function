@@ -67,8 +67,8 @@ jobs:
         uses: azure/login@v2
         with:
           client-id: e985b25a-f664-4278-8b5d-1e035b25f00b
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          tenant-id: 3d4d6833-4a85-46b7-8061-8f631af5a2d0
+          subscription-id: 62f883d6-5071-41a7-be0a-bacac78c9c6a
 
 
       # Function App deployen

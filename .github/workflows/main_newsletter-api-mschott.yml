@@ -1,0 +1,80 @@
+name: Build and deploy dotnet core project to Azure Function App - newsletter-api-mschott
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'
+  DOTNET_VERSION: '8.0'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+
+      # Repository herunterladen
+      - name: Checkout GitHub Action
+        uses: actions/checkout@v4
+
+
+      # .NET installieren
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+
+      # Abhängigkeiten wiederherstellen
+      - name: Restore dependencies
+        run: dotnet restore
+
+
+      # Projekt bauen
+      - name: Build project
+        run: |
+          dotnet build \
+            --configuration Release \
+            --no-restore \
+            --output ./output
+
+
+      # Prüfen, ob die Function-App-Dateien tatsächlich vorhanden sind
+      - name: Verify build output
+        run: |
+          echo "=== Build output ==="
+          ls -la ./output
+          echo ""
+          echo "=== host.json ==="
+
+          if [ -f "./output/host.json" ]; then
+            echo "host.json gefunden."
+          else
+            echo "FEHLER: host.json wurde nicht gefunden!"
+            exit 1
+          fi
+
+
+      # Azure Login über OIDC
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: e985b25a-f664-4278-8b5d-1e035b25f00b
+          tenant-id: 3d4d6833-4a85-46b7-8061-8f631af5a2d0
+          subscription-id: 62f883d6-5071-41a7-be0a-bacac78c9c6a
+
+
+      # Function App deployen
+      - name: Deploy to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: newsletter-api-mschott
+          slot-name: Production
+          package: './output'

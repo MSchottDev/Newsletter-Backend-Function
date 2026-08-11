@@ -7,6 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Newsletter_Backend_Function</RootNamespace>
+    <UserSecretsId>48e134b7-15ef-4d04-9374-12c3eccbde2b</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

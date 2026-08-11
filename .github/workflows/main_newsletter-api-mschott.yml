@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/azure/functions-action
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy dotnet core project to Azure Function App - newsletter-api-mschott
 
 on:
@@ -10,44 +7,74 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.' # set this to the path to your web app project, defaults to the repository root
-  DOTNET_VERSION: '8.0' # set this to the dotnet version to use
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'
+  DOTNET_VERSION: '8.0'
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
-      - name: 'Checkout GitHub Action'
+
+      # Repository herunterladen
+      - name: Checkout GitHub Action
         uses: actions/checkout@v4
 
-      - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
-        uses: actions/setup-dotnet@v1
+
+      # .NET installieren
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: 'Resolve Project Dependencies Using Dotnet'
-        shell: bash
+
+      # Abhängigkeiten wiederherstellen
+      - name: Restore dependencies
+        run: dotnet restore
+
+
+      # Projekt bauen
+      - name: Build project
         run: |
-          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-          dotnet build --configuration Release --output ./output
-          popd
-      
+          dotnet build \
+            --configuration Release \
+            --no-restore \
+            --output ./output
+
+
+      # Prüfen, ob die Function-App-Dateien tatsächlich vorhanden sind
+      - name: Verify build output
+        run: |
+          echo "=== Build output ==="
+          ls -la ./output
+          echo ""
+          echo "=== host.json ==="
+
+          if [ -f "./output/host.json" ]; then
+            echo "host.json gefunden."
+          else
+            echo "FEHLER: host.json wurde nicht gefunden!"
+            exit 1
+          fi
+
+
+      # Azure Login über OIDC
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_E612E79AF7BE4B138585025D3E1AE401 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F895D565C0AE48A181DAF109ADAFB04B }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E626A84DDE054F989802E875F6CFBA19 }}
+          client-id: e985b25a-f664-4278-8b5d-1e035b25f00b
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: 'Run Azure Functions Action'
+
+      # Function App deployen
+      - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
-        id: fa
         with:
-          app-name: 'newsletter-api-mschott'
-          slot-name: 'Production'
-          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
-          
+          app-name: newsletter-api-mschott
+          slot-name: Production
+          package: './output'

@@ -84,6 +84,54 @@ namespace Newsletter_Backend_Function.Services
         }
 
 
+        // Newsletter Emailservice
+
+        public async Task SendNewsletterEmail(
+            string toEmail,
+            string unsubscribeToken,
+            string title,
+            string repoName,
+            string description,
+            string repoLink)
+        {
+            var templatePath = Path.Combine(
+                AppContext.BaseDirectory,
+                "Templates",
+                "NewsletterEmail.html"
+            );
+
+            var htmlContent = await File.ReadAllTextAsync(templatePath);
+
+            var apiBaseUrl = _configuration["App:ApiBaseUrl"];
+
+            var unsubscribeLink =
+                $"{apiBaseUrl}/api/subscribers/unsubscribe?token={unsubscribeToken}";
+
+            htmlContent = htmlContent
+                .Replace("{{TITLE}}", title)
+                .Replace("{{REPO_NAME}}", repoName)
+                .Replace("{{DESCRIPTION}}", description)
+                .Replace("{{REPO_LINK}}", repoLink)
+                .Replace("{{UNSUBSCRIBE_LINK}}", unsubscribeLink);
+
+            var plainTextContent =
+                $"Hallo,\n\n" +
+                $"es gibt Neuigkeiten von Matthias Schott.\n\n" +
+                $"Ich habe ein neues GitHub-Projekt gestartet: {title}\n\n" +
+                $"Repository: {repoName}\n\n" +
+                $"{description}\n\n" +
+                $"Zum GitHub Repository:\n{repoLink}\n\n" +
+                $"Newsletter abbestellen:\n{unsubscribeLink}";
+
+            await SendEmail(
+                toEmail,
+                title,
+                htmlContent,
+                plainTextContent
+            );
+        }
+
+
         // Sendgrid Versendelogik
 
         private async Task SendEmail(

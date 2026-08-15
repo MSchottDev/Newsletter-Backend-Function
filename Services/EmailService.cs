@@ -114,10 +114,18 @@ namespace Newsletter_Backend_Function.Services
 
             var response = await client.SendEmailAsync(msg);
 
+            var body = await response.Body.ReadAsStringAsync();
+
+            Console.WriteLine($"===== SENDGRID =====");
+            Console.WriteLine($"Status: {(int)response.StatusCode}");
+            Console.WriteLine($"Body: {body}");
+            Console.WriteLine("====================");
+
             if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 300)
             {
-                var body = await response.Body.ReadAsStringAsync();
-                throw new Exception($"SendGrid Fehler: {body}");
+                throw new Exception(
+                    $"SendGrid Fehler {(int)response.StatusCode}: {body}"
+                );
             }
         }
     }

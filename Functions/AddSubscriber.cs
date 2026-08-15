@@ -99,12 +99,16 @@ namespace Newsletter_Backend_Function.Functions
             }
             catch (Exception ex)
             {
-                var emailError = req.CreateResponse(HttpStatusCode.OK);
+                Console.WriteLine("===== EMAIL ERROR =====");
+                Console.WriteLine(ex.ToString());
+                Console.WriteLine("=======================");
+
+                var emailError = req.CreateResponse(HttpStatusCode.InternalServerError);
 
                 await emailError.WriteAsJsonAsync(new
                 {
                     message = "Email gespeichert, Senden schlägt fehl",
-                    error = ex.Message
+                    error = ex.ToString()
                 });
 
                 return emailError;

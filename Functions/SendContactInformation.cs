@@ -17,19 +17,40 @@ public class SendContactMessage
 
     [Function("SendContactMessage")]
     public async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "contact")]
-        HttpRequestData req)
+    [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "contact")]
+    HttpRequestData req)
     {
         try
         {
-            var data = await JsonSerializer.DeserializeAsync<ContactRequest>(req.Body);
+            // Request Body auslesen
+            var json = await new StreamReader(req.Body).ReadToEndAsync();
+
+            Console.WriteLine("===== CONTACT REQUEST =====");
+            Console.WriteLine(json);
+            Console.WriteLine("===========================");
+
+            // JSON deserialisieren
+            var data = JsonSerializer.Deserialize<ContactRequest>(
+                json,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+            // Empfangene Werte protokollieren
+            Console.WriteLine("===== CONTACT DATA =====");
+            Console.WriteLine($"Name: '{data?.Name}'");
+            Console.WriteLine($"Email: '{data?.Email}'");
+            Console.WriteLine($"Message: '{data?.Message}'");
+            Console.WriteLine("========================");
 
             if (data == null ||
                 string.IsNullOrWhiteSpace(data.Name) ||
                 string.IsNullOrWhiteSpace(data.Email) ||
                 string.IsNullOrWhiteSpace(data.Message))
             {
-                var badRequest = req.CreateResponse(HttpStatusCode.BadRequest);
+                var badRequest = req.CreateResponse(
+                    HttpStatusCode.BadRequest);
 
                 await badRequest.WriteAsJsonAsync(new
                 {
@@ -39,13 +60,15 @@ public class SendContactMessage
                 return badRequest;
             }
 
+            // Kontaktmail versenden
             await _emailService.SendContactEmail(
                 data.Name,
                 data.Email,
                 data.Message
             );
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
+            var response = req.CreateResponse(
+                HttpStatusCode.OK);
 
             await response.WriteAsJsonAsync(new
             {
@@ -65,16 +88,16 @@ public class SendContactMessage
 
             await error.WriteAsJsonAsync(new
             {
-                message = "Die Nachricht konnte nicht gesendet werden.",
-                error = ex.ToString()
+                message = "Die Nachricht konnte nicht gesendet werden."
             });
 
             return error;
         }
     }
+
 }
 
-public class ContactRequest
+    public class ContactRequest
 {
     public string Name { get; set; } = "";
     public string Email { get; set; } = "";
